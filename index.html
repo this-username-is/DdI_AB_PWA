@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sortieralgorithmen Übung</title>
     <meta name="description" content="Interaktive Übung für Bubble Sort und Insertion Sort mit Tierkarten">
-    <link href="https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@400;600;700&family=Comfortaa:wght@700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@400;600;700&family=Comfortaa:wght@700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Header Controls -->
@@ -67,6 +71,10 @@
                 <span class="stat-label">Durchgang:</span>
                 <span id="pass" class="stat-value">-</span>
             </div>
+            <div class="stat">
+                <span class="stat-label">Zeit:</span>
+                <span id="timer" class="stat-value">00:00</span>
+            </div>
             <div class="stat progress-container">
                 <div id="progressBar" class="progress-bar"></div>
             </div>
@@ -79,6 +87,7 @@
             <h2>🎉 Geschafft!</h2>
             <p>Du hast die Karten erfolgreich sortiert!</p>
             <div class="modal-stats">
+                <p>Zeit: <span id="finalTime">00:00</span></p>
                 <p>Vergleiche: <span id="finalComparisons">0</span></p>
                 <p>Tausche: <span id="finalSwaps">0</span></p>
             </div>
@@ -88,4 +97,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

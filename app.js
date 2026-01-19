@@ -141,6 +141,8 @@ let state = {
     isRunning: false,
     comparisons: 0,
     swaps: 0,
+    startTime: null,
+    timerInterval: null,
     currentStep: null,
     bubbleState: { i: 0, j: 0 },
     insertionState: { i: 1, j: 0, key: null },
@@ -160,9 +162,11 @@ const elements = {
     comparisons: document.getElementById('comparisons'),
     swaps: document.getElementById('swaps'),
     pass: document.getElementById('pass'),
+    timer: document.getElementById('timer'),
     progressBar: document.getElementById('progressBar'),
     successModal: document.getElementById('successModal'),
     closeModal: document.getElementById('closeModal'),
+    finalTime: document.getElementById('finalTime'),
     finalComparisons: document.getElementById('finalComparisons'),
     finalSwaps: document.getElementById('finalSwaps')
 };
@@ -208,7 +212,7 @@ function renderInitialState() {
 // ===== Card Rendering =====
 function renderCards() {
     elements.cardsContainer.innerHTML = '';
-    
+
     state.cards.forEach((card, index) => {
         const cardEl = createCardElement(card, index);
         elements.cardsContainer.appendChild(cardEl);
@@ -220,7 +224,7 @@ function createCardElement(card, index) {
     div.className = `animal-card type-${card.type}`;
     div.dataset.index = index;
     div.dataset.id = card.id;
-    
+
     div.innerHTML = `
         <div class="card-header">
             <span class="card-number">${card.id}</span>
@@ -240,17 +244,17 @@ function createCardElement(card, index) {
             </div>
         </div>
     `;
-    
+
     return div;
 }
 
 // ===== Exercise Control =====
 function startExercise() {
     if (state.isRunning) return;
-    
+
     // Shuffle cards
     state.cards = [...state.cards].sort(() => Math.random() - 0.5);
-    
+
     // Reset state
     state.isRunning = true;
     state.comparisons = 0;
@@ -258,7 +262,12 @@ function startExercise() {
     state.bubbleState = { i: 0, j: 0 };
     state.insertionState = { i: 1, j: 0, key: null };
     state.selectedCard = null;
-    
+
+    // Start Timer
+    state.startTime = Date.now();
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(updateTimer, 1000);
+
     elements.startBtn.disabled = true;
     updateStats();
     renderCards();
@@ -269,12 +278,19 @@ function startExercise() {
 function resetExercise() {
     state.isRunning = false;
     state.selectedCard = null;
+
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+    }
+
     elements.startBtn.disabled = false;
     elements.instructions.className = 'instructions';
     renderInitialState();
     updateStats();
     elements.progressBar.style.width = '0%';
     elements.pass.textContent = '-';
+    elements.timer.textContent = '00:00';
 }
 
 function updateStats() {
@@ -290,10 +306,10 @@ function updateInstructions(text, type = '') {
 // ===== Interaction Setup =====
 function setupInteraction() {
     const cards = document.querySelectorAll('.animal-card');
-    
+
     cards.forEach(card => {
         card.addEventListener('click', handleCardClick);
-        
+
         // Touch events
         card.addEventListener('touchstart', handleTouchStart, { passive: true });
         card.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -303,9 +319,9 @@ function setupInteraction() {
 
 function handleCardClick(e) {
     if (!state.isRunning) return;
-    
+
     const clickedIndex = parseInt(e.currentTarget.dataset.index);
-    
+
     if (state.algorithm === 'bubble') {
         handleBubbleClick(clickedIndex);
     } else {
@@ -316,13 +332,13 @@ function handleCardClick(e) {
 // ===== Bubble Sort Logic =====
 function handleBubbleClick(clickedIndex) {
     const { j } = state.bubbleState;
-    
+
     // User must click one of the highlighted cards
     if (clickedIndex !== j && clickedIndex !== j + 1) {
         showFeedback('incorrect');
         return;
     }
-    
+
     if (state.selectedCard === null) {
         state.selectedCard = clickedIndex;
         highlightCard(clickedIndex, 'highlight-active');
@@ -332,16 +348,16 @@ function handleBubbleClick(clickedIndex) {
         const card2 = state.cards[j + 1];
         const attr = state.attribute;
         const needsSwap = card1[attr] > card2[attr];
-        
+
         const selectedFirst = state.selectedCard;
         const selectedSecond = clickedIndex;
-        
+
         // User clicked two different cards = wants to swap
         const userWantsSwap = selectedFirst !== selectedSecond;
-        
+
         state.comparisons++;
         updateStats();
-        
+
         if (userWantsSwap === needsSwap) {
             // Correct decision
             showFeedback('correct');
@@ -364,40 +380,40 @@ function handleBubbleClick(clickedIndex) {
 function advanceBubbleSort() {
     const n = state.cards.length;
     let { i, j } = state.bubbleState;
-    
+
     j++;
-    
+
     if (j >= n - 1 - i) {
         i++;
         j = 0;
-        
+
         if (i >= n - 1 || isSorted()) {
             completeExercise();
             return;
         }
     }
-    
+
     state.bubbleState = { i, j };
     elements.pass.textContent = `${i + 1}`;
     elements.progressBar.style.width = `${(i / (n - 1)) * 100}%`;
-    
+
     nextStep();
 }
 
 function highlightBubbleStep() {
     clearHighlights();
     const { j } = state.bubbleState;
-    
+
     const cards = document.querySelectorAll('.animal-card');
     if (cards[j]) cards[j].classList.add('highlight');
     if (cards[j + 1]) cards[j + 1].classList.add('highlight');
-    
+
     const card1 = state.cards[j];
     const card2 = state.cards[j + 1];
     const attrLabel = state.attribute === 'weight' ? 'Gewicht' : 'Größe';
     const val1 = state.attribute === 'weight' ? card1.weightDisplay : card1.sizeDisplay;
     const val2 = state.attribute === 'weight' ? card2.weightDisplay : card2.sizeDisplay;
-    
+
     updateInstructions(
         `Vergleiche <strong>${card1.name}</strong> (${val1}) mit <strong>${card2.name}</strong> (${val2}).<br>` +
         `Klicke beide Karten zum Tauschen, oder dieselbe Karte zweimal um zu bestätigen.`,
@@ -408,7 +424,7 @@ function highlightBubbleStep() {
 // ===== Insertion Sort Logic =====
 function handleInsertionClick(clickedIndex) {
     const { i, j } = state.insertionState;
-    
+
     if (state.selectedCard === null) {
         // First selection should be the current card to insert (at position i)
         if (clickedIndex === i) {
@@ -425,13 +441,13 @@ function handleInsertionClick(clickedIndex) {
         // Second click - insert position
         const keyCard = state.cards[i];
         const correctPos = findInsertPosition(i);
-        
+
         state.comparisons++;
         updateStats();
-        
+
         if (clickedIndex === correctPos || (clickedIndex < i && correctPos === clickedIndex)) {
             showFeedback('correct');
-            
+
             if (correctPos < i) {
                 // Move card to correct position
                 const removed = state.cards.splice(i, 1)[0];
@@ -439,7 +455,7 @@ function handleInsertionClick(clickedIndex) {
                 state.swaps += i - correctPos;
                 updateStats();
             }
-            
+
             state.selectedCard = null;
             setTimeout(() => advanceInsertionSort(), 500);
         } else {
@@ -453,7 +469,7 @@ function handleInsertionClick(clickedIndex) {
 function findInsertPosition(currentIndex) {
     const key = state.cards[currentIndex];
     const attr = state.attribute;
-    
+
     for (let j = 0; j < currentIndex; j++) {
         if (state.cards[j][attr] > key[attr]) {
             return j;
@@ -465,18 +481,18 @@ function findInsertPosition(currentIndex) {
 function advanceInsertionSort() {
     let { i } = state.insertionState;
     const n = state.cards.length;
-    
+
     i++;
-    
+
     if (i >= n) {
         completeExercise();
         return;
     }
-    
+
     state.insertionState = { i, j: 0, key: null };
     elements.pass.textContent = `${i}`;
     elements.progressBar.style.width = `${((i - 1) / (n - 1)) * 100}%`;
-    
+
     renderCards();
     setupInteraction();
     nextStep();
@@ -485,21 +501,21 @@ function advanceInsertionSort() {
 function highlightInsertionStep() {
     clearHighlights();
     const { i } = state.insertionState;
-    
+
     const cards = document.querySelectorAll('.animal-card');
-    
+
     // Highlight sorted portion
     for (let k = 0; k < i; k++) {
         if (cards[k]) cards[k].classList.add('sorted');
     }
-    
+
     // Highlight current card to insert
     if (cards[i]) cards[i].classList.add('highlight');
-    
+
     const card = state.cards[i];
     const attrLabel = state.attribute === 'weight' ? 'Gewicht' : 'Größe';
     const val = state.attribute === 'weight' ? card.weightDisplay : card.sizeDisplay;
-    
+
     updateInstructions(
         `Wähle <strong>${card.name}</strong> (${val}) und füge sie an die richtige Stelle ein.`,
         'highlight-insert'
@@ -537,7 +553,7 @@ function showFeedback(type) {
             card.classList.add(type);
         }
     });
-    
+
     // Play sound feedback (using Web Audio API for simple beeps)
     playSound(type === 'correct');
 }
@@ -545,22 +561,22 @@ function showFeedback(type) {
 function swapCards(index1, index2) {
     // Swap in data
     [state.cards[index1], state.cards[index2]] = [state.cards[index2], state.cards[index1]];
-    
+
     // Animate swap in DOM
     const cards = document.querySelectorAll('.animal-card');
     const card1 = cards[index1];
     const card2 = cards[index2];
-    
+
     if (card1 && card2) {
         const rect1 = card1.getBoundingClientRect();
         const rect2 = card2.getBoundingClientRect();
         const diff = rect2.left - rect1.left;
-        
+
         card1.style.transition = 'transform 0.3s ease';
         card2.style.transition = 'transform 0.3s ease';
         card1.style.transform = `translateX(${diff}px)`;
         card2.style.transform = `translateX(${-diff}px)`;
-        
+
         setTimeout(() => {
             renderCards();
             setupInteraction();
@@ -580,18 +596,38 @@ function isSorted() {
 
 function completeExercise() {
     state.isRunning = false;
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+    }
+
     clearHighlights();
-    
+
+    const finalTimeFormatted = formatTime(Date.now() - state.startTime);
+    elements.finalTime.textContent = finalTimeFormatted;
     elements.finalComparisons.textContent = state.comparisons;
     elements.finalSwaps.textContent = state.swaps;
     elements.progressBar.style.width = '100%';
-    
+
     updateInstructions('🎉 <strong>Glückwunsch!</strong> Du hast alle Karten erfolgreich sortiert!');
     elements.instructions.className = 'instructions';
-    
+
     setTimeout(() => {
         elements.successModal.classList.remove('hidden');
     }, 500);
+}
+
+function updateTimer() {
+    if (!state.isRunning) return;
+    const elapsed = Date.now() - state.startTime;
+    elements.timer.textContent = formatTime(elapsed);
+}
+
+function formatTime(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 // ===== Sound Feedback =====
@@ -602,23 +638,23 @@ function playSound(isCorrect) {
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
+
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
+
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
         if (isCorrect) {
             oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
             oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1); // E5
         } else {
             oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
         }
-        
+
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
+
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
     } catch (e) {
