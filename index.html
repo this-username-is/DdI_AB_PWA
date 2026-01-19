@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sortieralgorithmen Übung</title>
+    <meta name="description" content="Interaktive Übung für Bubble Sort und Insertion Sort mit Tierkarten">
+    <link href="https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@400;600;700&family=Comfortaa:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header Controls -->
+        <header class="header">
+            <h1>🐾 Sortieralgorithmen Übung</h1>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="algorithm">Algorithmus:</label>
+                    <select id="algorithm">
+                        <option value="bubble">Bubble Sort</option>
+                        <option value="insertion">Insertion Sort</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="attribute">Sortieren nach:</label>
+                    <select id="attribute">
+                        <option value="weight">Gewicht</option>
+                        <option value="size">Größe</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="cardCount">Karten:</label>
+                    <select id="cardCount">
+                        <option value="4">4</option>
+                        <option value="6" selected>6</option>
+                        <option value="9">9 (alle)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button id="startBtn" class="btn btn-primary">▶ Start</button>
+                <button id="resetBtn" class="btn btn-secondary">↻ Zurücksetzen</button>
+            </div>
+        </header>
+
+        <!-- Instructions Panel -->
+        <div id="instructions" class="instructions">
+            <p>Wähle einen Algorithmus und klicke <strong>Start</strong>, um die Übung zu beginnen.</p>
+        </div>
+
+        <!-- Cards Container -->
+        <main id="cardsContainer" class="cards-container">
+            <!-- Cards will be dynamically inserted here -->
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="stat">
+                <span class="stat-label">Vergleiche:</span>
+                <span id="comparisons" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Tausche:</span>
+                <span id="swaps" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Durchgang:</span>
+                <span id="pass" class="stat-value">-</span>
+            </div>
+            <div class="stat progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🎉 Geschafft!</h2>
+            <p>Du hast die Karten erfolgreich sortiert!</p>
+            <div class="modal-stats">
+                <p>Vergleiche: <span id="finalComparisons">0</span></p>
+                <p>Tausche: <span id="finalSwaps">0</span></p>
+            </div>
+            <button id="closeModal" class="btn btn-primary">Neue Runde</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
